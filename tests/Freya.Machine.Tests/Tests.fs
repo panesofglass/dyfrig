@@ -50,13 +50,17 @@ type TodoBackend () =
 
 // Create test server and client
 let baseAddress = Uri "http://localhost/"
-let server = TestServer.Create<TodoBackend>()
-server.BaseAddress <- baseAddress
-let client = server.HttpClient
-client.BaseAddress <- baseAddress
+let mutable server = Unchecked.defaultof<_>
+let mutable client = Unchecked.defaultof<_>
 
-// Add common CORS headers
-client.DefaultRequestHeaders.Add("Origin", "http://example.org/")
+[<TestFixtureSetUp>]
+let startup() =
+    server <- TestServer.Create<TodoBackend>()
+    server.BaseAddress <- baseAddress
+    client <- server.HttpClient
+    client.BaseAddress <- baseAddress
+    // Add common CORS headers
+    client.DefaultRequestHeaders.Add("Origin", "http://example.org/")
 
 [<TestFixtureTearDown>]
 let dispose() =
@@ -70,4 +74,11 @@ let ``todobackend returns empty array at first`` () =
         use! response = Async.AwaitTask <| client.SendAsync request
         let! result = Async.AwaitTask <| response.Content.ReadAsStringAsync()
         result =? "[]" }
+    |> Async.RunSynchronously
+
+[<Test>]
+let ``todobackend should return 404 for non-existent resource`` () =
+    async {
+        use! response = Async.AwaitTask <| client.GetAsync("http://localhost/not/found")
+        response.StatusCode =? System.Net.HttpStatusCode.NotFound }
     |> Async.RunSynchronously
