@@ -66,12 +66,12 @@ let patchTodo =
 
 (* Domain Operations
 
-   Here we can see that we wrap the domain api, turning the functions in to
-   Freya<'a> functions using asyncM, and passing properties of the request
+   Here we can see that we wrap the domain api, turning the functions into
+   Freya<'a> functions using fromAsync and passing properties of the request
    to the functions.
 
    Again, we memoize the results as we don't need (or wish)
-   to evaluate these more than once  per request - by memoizing here we can
+   to evaluate these more than once per request. By memoizing we can
    guarantee that these functions are idempotent within the scope of a
    request, allowing us to use them as part of multiple decisions safely. *)
 
@@ -172,12 +172,10 @@ let common =
         mediaTypesSupported json }
 
 let todosMethods =
-    freya {
-        return [ 
-            DELETE
-            GET
-            OPTIONS
-            POST ] }
+    Freya.init [ DELETE
+                 GET
+                 OPTIONS
+                 POST ]
 
 let todos =
     freyaMachine {
@@ -190,12 +188,10 @@ let todos =
         handleOk listHandler } |> FreyaMachine.toPipeline
 
 let todoMethods =
-    freya {
-        return [
-            DELETE
-            GET
-            OPTIONS
-            Method.Custom "PATCH" ] }
+    Freya.init [ DELETE
+                 GET
+                 OPTIONS
+                 Method.Custom "PATCH" ]
 
 let todo =
     freyaMachine {

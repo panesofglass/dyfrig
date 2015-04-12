@@ -46,17 +46,11 @@ let tuple x y =
    It saves having to use (freya { ... }) in multiple places within the
    computation expression, which can reduce duplication and help readability. *)
 
-let en =
-    freya {
-        return [ LanguageTag.Parse "en" ] }
+let en = Freya.init [ LanguageTag.Parse "en" ]
 
-let json =
-    freya {
-        return [ MediaType.Json ] }
+let json = Freya.init [ MediaType.Json ]
 
-let utf8 =
-    freya {
-        return [ Charset.Utf8 ] }
+let utf8 = Freya.init [ Charset.Utf8 ]
 
 (* Request Body Helper
 
@@ -64,19 +58,20 @@ let utf8 =
    a request, as it's usually very specific to an application, and the Freya
    way is to let the developer choose the most suitable approach.
 
-   We've used Fleece in this example, so we can use that to define the body
-   function below, which (following from Fleece) uses static inference to
+   We've used Chiron in this example, so we can use that to define the body
+   function below, which (following from Chiron) uses static inference to
    determine the type of return value needed. *)
 
 let readStream (x: Stream) =
     use reader = new StreamReader (x)
-    reader.ReadToEnd ()
+    reader.ReadToEndAsync()
+    |> Async.AwaitTask
 
 let readBody =
     freya {
         let! body = Freya.getLens Request.body
 
-        return readStream body }
+        return! Freya.fromAsync readStream body }
 
 let inline body () =
     freya {
@@ -91,7 +86,7 @@ let inline body () =
 
    Here we've taken a simple approach, defining a function which always returns
    UTF-8 encoded JSON, English language, provided that the argument can
-   be serialized to JSON using Fleece. *)
+   be serialized to JSON using Chiron. *)
 
 let inline represent x =
     { Description =
