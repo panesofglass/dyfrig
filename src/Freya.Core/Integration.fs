@@ -22,6 +22,7 @@
 module Freya.Core.Integration
 
 open System
+open System.Collections.Generic
 open System.Threading.Tasks
 
 (* OWIN Types *)
@@ -31,12 +32,20 @@ type OwinEnvironment =
     FreyaEnvironment
 
 /// Type alias for the OWIN AppFunc signature.
-type OwinAppFunc = 
+type OwinAppFunc =
     Func<OwinEnvironment, Task>
 
 /// Type alias for the OWIN MidFunc signature.
 type OwinMidFunc =
     Func<OwinAppFunc, OwinAppFunc>
+
+/// Type alias for the proposed OWIN MidFactoryFunc signature.
+type OwinMidFactoryFunc =
+    Func<IDictionary<string, obj>, OwinMidFunc>
+
+/// Type alias for the proposed OWIN BuildFunc signature.
+type OwinBuildFunc =
+    Action<OwinMidFactoryFunc>
 
 (* OWIN Conversion *)
 
@@ -90,7 +99,7 @@ module OwinMidFunc =
                     | Halt -> return () }
                 |> Async.StartAsTask :> Task
             OwinAppFunc app)
-    
+
     /// Converts a Freya.Pipeline to an OWIN MidFunc run after executing the next OwinAppFunc.
     [<CompiledName("FromFreyaAfter")>]
     let ofFreyaAfter (pipeline: FreyaPipeline) =
